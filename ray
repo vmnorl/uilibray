@@ -975,16 +975,22 @@ function RayfieldLibrary:Notify(NotificationSettings)
         Notification.Parent = Notifications
         Notification.Name = NotificationSettings.Title or "Unknown"
         Notification.Visible = true
-        Notification.Actions.Template.Visible = false
 
-        if NotificationSettings.Actions then
+        -- SAFE: only touch Actions if it actually exists in this asset
+        local ActionsFrame = Notification:FindFirstChild("Actions")
+        if ActionsFrame and ActionsFrame:FindFirstChild("Template") then
+            ActionsFrame.Template.Visible = false
+        end
+
+        -- SAFE: only build action buttons if both the data AND the UI frame exist
+        if NotificationSettings.Actions and ActionsFrame and ActionsFrame:FindFirstChild("Template") then
             for _, Action in pairs(NotificationSettings.Actions) do
                 ActionCompleted = false
-                local NewAction = Notification.Actions.Template:Clone()
+                local NewAction = ActionsFrame.Template:Clone()
                 NewAction.BackgroundColor3 = SelectedTheme.NotificationActionsBackground
                 NewAction.Name = Action.Name
                 NewAction.Visible = true
-                NewAction.Parent = Notification.Actions
+                NewAction.Parent = ActionsFrame
                 NewAction.Text = Action.Name
                 NewAction.BackgroundTransparency = 1
                 NewAction.TextTransparency = 1
@@ -995,6 +1001,55 @@ function RayfieldLibrary:Notify(NotificationSettings)
                 end)
             end
         end
+
+        Notification.BackgroundColor3    = SelectedTheme.NotificationBackground
+        Notification.Title.Text          = NotificationSettings.Title or "Unknown"
+        Notification.Title.TextTransparency   = 1
+        Notification.Title.TextColor3    = SelectedTheme.TextColor
+        Notification.Description.Text    = NotificationSettings.Content or ""
+        Notification.Description.TextTransparency = 1
+        Notification.Description.TextColor3 = SelectedTheme.TextColor
+        Notification.Icon.ImageColor3    = SelectedTheme.TextColor
+        Notification.Icon.Image          = NotificationSettings.Image
+            and ("rbxassetid://" .. tostring(NotificationSettings.Image))
+            or "rbxassetid://3944680095"
+        Notification.Icon.ImageTransparency = 1
+        Notification.Size = UDim2.new(0,260,0,80)
+        Notification.BackgroundTransparency = 1
+
+        TweenService:Create(Notification, TweenInfo.new(0.7, Enum.EasingStyle.Quint), {Size = UDim2.new(0,295,0,91), BackgroundTransparency = 0.1}):Play()
+        Notification:TweenPosition(UDim2.new(0.5,0,0.915,0),"Out","Quint",0.8,true)
+        task.wait(0.3)
+        TweenService:Create(Notification.Icon, TweenInfo.new(0.6, Enum.EasingStyle.Quint), {ImageTransparency = 0}):Play()
+        TweenService:Create(Notification.Title, TweenInfo.new(0.7, Enum.EasingStyle.Quint), {TextTransparency = 0}):Play()
+        TweenService:Create(Notification.Description, TweenInfo.new(0.6, Enum.EasingStyle.Quint), {TextTransparency = 0.2}):Play()
+        task.wait(0.2)
+
+        -- SAFE: only expand for actions if the UI frame exists
+        if not NotificationSettings.Actions or not ActionsFrame then
+            task.wait(NotificationSettings.Duration or NotificationDuration - 0.5)
+        else
+            task.wait(0.8)
+            TweenService:Create(Notification, TweenInfo.new(0.7, Enum.EasingStyle.Quint), {Size = UDim2.new(0,295,0,132)}):Play()
+            task.wait(0.3)
+            for _, Action in ipairs(ActionsFrame:GetChildren()) do
+                if Action.ClassName == "TextButton" and Action.Name ~= "Template" then
+                    TweenService:Create(Action, TweenInfo.new(0.5, Enum.EasingStyle.Quint), {BackgroundTransparency = 0.2}):Play()
+                    TweenService:Create(Action, TweenInfo.new(0.6, Enum.EasingStyle.Quint), {TextTransparency = 0}):Play()
+                    task.wait(0.05)
+                end
+            end
+        end
+
+        repeat task.wait(0.05) until ActionCompleted
+
+        TweenService:Create(Notification, TweenInfo.new(0.9, Enum.EasingStyle.Quint), {Size = UDim2.new(0,260,0,0), BackgroundTransparency = 1}):Play()
+        TweenService:Create(Notification.Title, TweenInfo.new(0.6, Enum.EasingStyle.Quint), {TextTransparency = 1}):Play()
+        TweenService:Create(Notification.Description, TweenInfo.new(0.6, Enum.EasingStyle.Quint), {TextTransparency = 1}):Play()
+        task.wait(1.1)
+        Notification:Destroy()
+    end)
+end
 
         Notification.BackgroundColor3    = SelectedTheme.NotificationBackground
         Notification.Title.Text          = NotificationSettings.Title or "Unknown"
